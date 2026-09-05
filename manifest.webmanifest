@@ -1,0 +1,14 @@
+{
+  "name":"Cozy Game Day 💗",
+  "short_name":"Cozy Game Day",
+  "description":"A cozy family sports hub with live football and tennis.",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#fff7fb",
+  "theme_color":"#d8799a",
+  "icons":[
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}
