@@ -590,6 +590,28 @@ body{
   }
 }
 
+
+/* DAILY US OPEN */
+.usopen-daily{margin:14px 0;padding:16px;border:1px solid #f0c5d4;border-radius:24px;background:linear-gradient(135deg,#fffafd,#fff0f6);box-shadow:0 10px 28px rgba(192,88,127,.07)}
+[data-theme="dark"] .usopen-daily{background:#302532;border-color:#624052}
+.date-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 7px;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x;scroll-snap-type:x proximity}
+.date-strip::-webkit-scrollbar{display:none}
+.date-pill{flex:0 0 auto;min-width:84px;border:1px solid #efbfd0;background:var(--card2);color:#a94b6f;border-radius:16px;padding:9px 11px;font-weight:900;text-align:center;scroll-snap-align:start}
+.date-pill small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.date-pill.active{background:#d8799a;border-color:#d8799a;color:#fff}
+.date-pill.active small{color:#fff}
+.daily-summary{margin-top:8px;font-size:12px;color:var(--muted)}
+.tennis-live-score{margin-top:10px;padding:10px 11px;border-radius:14px;background:#fff3f7;border:1px solid #f1c4d3}
+[data-theme="dark"] .tennis-live-score{background:#402b37;border-color:#654052}
+.tennis-live-score strong{color:#b0476d}
+.tennis-score-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.tennis-score-row span{font-size:12px;font-weight:800}
+.tennis-score-row b{font-size:18px}
+.feed-debug{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.feed-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;border:1px solid var(--line);background:var(--card2);font-size:10px;font-weight:900;color:var(--muted)}
+.feed-chip.good{color:#287444;border-color:#b9dfc5;background:#edf9f1}
+.feed-chip.bad{color:#9b5c14;border-color:#efcfaa;background:#fff3e7}
+
 </style>
 </head>
 <body><a class="skip-link" href="#games">Skip to games</a><div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
@@ -676,7 +698,7 @@ body{
     <button class="tab active" data-view="home">⭐ Home</button>
     <button class="tab" data-view="nfl">🏈 NFL</button>
     <button class="tab" data-view="cfb">🎓 College</button>
-    <button class="tab" data-view="tennismen">🎾 Men</button><button class="tab" data-view="tenniswomen">🎾 Women</button>
+    <button class="tab" data-view="tennismen">🎾 Men</button><button class="tab" data-view="tenniswomen">🎾 Women</button><button class="tab" data-view="usopen">🌸 US Open Today</button>
     <button class="tab" data-view="draw">🧩 US Open Draw</button>
     <button class="tab" data-view="tv">📺 TV Guide</button>
     <button class="tab" data-view="standings">🏆 NFL Standings</button>
@@ -704,7 +726,7 @@ body{
 
 <div class="bottom-nav">
   <button class="active" data-view="home"><b>⭐</b>Home</button><button data-view="nfl"><b>🏈</b>NFL</button>
-  <button data-view="cfb"><b>🎓</b>College</button><button data-view="tennismen"><b>🎾</b>Men</button><button data-view="tenniswomen"><b>🎾</b>Women</button>
+  <button data-view="cfb"><b>🎓</b>College</button><button data-view="tennismen"><b>🎾</b>Men</button><button data-view="tenniswomen"><b>🎾</b>Women</button><button data-view="usopen"><b>🌸</b>Today</button>
   <button data-view="tv"><b>📺</b>TV</button><button data-view="draw"><b>🧩</b>Draw</button><button data-view="favorites"><b>❤️</b>Saved</button><button data-view="all"><b>📅</b>All</button>
 </div>
 
@@ -752,6 +774,7 @@ const svcOpts=[
 let services=read("gd-services",["youtube","peacock","prime","disney","netflix"]);
 let hideScores=localStorage.getItem("gd-hide")==="1";
 let theme=localStorage.getItem("gd-theme")||"light";
+let selectedUSOpenDate=null;
 let currentView="home", data={nfl:[],cfb:[],tennis:[],standings:null}, nextRefresh=Date.now()+REFRESH_MS;
 let daysBack=+localStorage.getItem("gd-back")||3, daysAhead=+localStorage.getItem("gd-ahead")||21;
 let extraFavorites=read("gd-favs",[]);
@@ -780,7 +803,47 @@ function toast(msg){let e=$("#toast");e.textContent=msg;e.classList.add("show");
 function setStatus(mode,text){$("#statusDot").className="dot"+(mode==="loading"?" loading":mode==="error"?" error":"");$("#statusText").textContent=text}
 function ymd(d){return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`}
 function range(){let a=new Date(),b=new Date();a.setDate(a.getDate()-daysBack);b.setDate(b.getDate()+daysAhead);return `${ymd(a)}-${ymd(b)}`}
-async function json(url){let r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error(r.status);return r.json()}
+
+function proxyFeedFor(url){
+ try{
+  const u=new URL(url);
+  const p=u.pathname;
+  const dates=u.searchParams.get("dates")||"";
+  if(/\/football\/nfl\/scoreboard$/i.test(p))return {feed:"nfl",dates};
+  if(/\/football\/college-football\/scoreboard$/i.test(p))return {feed:"cfb",dates};
+  if(/\/tennis\/atp\/scoreboard$/i.test(p))return {feed:"atp",dates};
+  if(/\/tennis\/wta\/scoreboard$/i.test(p))return {feed:"wta",dates};
+  if(/\/football\/nfl\/standings$/i.test(p))return {feed:"standings",dates:""};
+ }catch(e){}
+ return null;
+}
+async function json(url){
+ const feed=proxyFeedFor(url);
+ const hosted=location.protocol==="https:"||location.protocol==="http:";
+ let requestUrl=url;
+ if(hosted&&feed){
+  const q=new URLSearchParams({feed:feed.feed});
+  if(feed.dates)q.set("dates",feed.dates);
+  requestUrl=`/api/sports?${q.toString()}`;
+ }
+ const r=await fetch(requestUrl,{cache:"no-store",headers:{"Accept":"application/json"}});
+ if(!r.ok){
+  let detail="";
+  try{detail=(await r.text()).slice(0,220)}catch(e){}
+  if(hosted&&feed&&r.status===404)throw Error("The Netlify sports function is not deployed.");
+  throw Error(`Sports request failed (${r.status}) ${detail}`);
+ }
+ return r.json();
+}
+async function testLiveFeed(){
+ if(location.protocol==="file:")return false;
+ try{
+  const r=await fetch("/api/sports?feed=health",{cache:"no-store"});
+  if(!r.ok)return false;
+  const j=await r.json();
+  return !!j.ok;
+ }catch(e){return false}
+}
 function norm(e,league){
  const c=e.competitions?.[0]||{}, cs=c.competitors||[], venue=c.venue||{}, ad=venue.address||{}, st=e.status?.type||c.status?.type||{};
  return {id:String(e.id),league,name:e.name||e.shortName||"",short:e.shortName||e.name||"",date:new Date(e.date||c.date),
@@ -912,6 +975,7 @@ function card(g){
  return `<article class="card ${fav?"favorite-card":""} ${live?"live-card":""}">
    <div class="card-top"><div class="league">${fav?"⭐ ":""}${esc(g.league)}</div>${badge(g)}</div>
    <div class="teams">${teams||`<div class="name">${esc(g.short)}</div>`}</div>
+   ${tennisLiveBlock(g)}
    <div class="meta">
     <div class="meta-row">🕒 <strong>${fmt(g.date)}${g.state==="pre"&&countdown(g.date)?` • ${countdown(g.date)} away`:""}</strong></div>
     <div class="meta-row">📍 <span>${esc([g.venue,g.city].filter(Boolean).join(" • ")||"Location TBD")}</span></div>
@@ -957,18 +1021,18 @@ function hero(id,countId,list,test){
 
 function updateEnvironmentBadge(){
  const host=$("#hostBadge"),dev=$("#deviceBadge"),help=$("#hostHelp");
- const isHosted=location.protocol==="https:" || location.protocol==="http:";
- const isMobile=window.matchMedia("(max-width: 680px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
- if(dev)dev.textContent=isMobile?"📱 Mobile app view":"💻 Laptop view";
+ const isHosted=location.protocol==="https:"||location.protocol==="http:";
+ const isMobile=window.matchMedia("(max-width:680px)").matches||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+ if(dev)dev.textContent=isMobile?"📱 Mobile app":"💻 Laptop";
  if(host){
   host.classList.toggle("live",!!window._feedConnected);
   host.classList.toggle("local",!window._feedConnected);
-  host.textContent=window._feedConnected?"● Live data connected":(isHosted?"◌ Connecting live data…":"⚠ Open Netlify version");
+  host.textContent=window._feedConnected?"● Live data connected ✓":(isHosted?"◌ Checking Netlify live feed…":"⚠ Open the Netlify version");
  }
  if(help){
-  help.textContent=window._feedConnected
-   ?(isMobile?"Live scores are connected on mobile 💗":"Live sports data is connected.")
-   :(isHosted?"Waiting for the sports feed…":"Use your Netlify URL for live mobile data.");
+  help.innerHTML=window._feedConnected
+   ?'<span class="feed-debug"><span class="feed-chip good">✓ Netlify API</span><span class="feed-chip good">✓ Sports feed</span></span>'
+   :(isHosted?'<span class="feed-debug"><span class="feed-chip bad">Waiting for /api/sports</span></span>':"Use your Netlify URL for live mobile data.");
  }
 }
 window.addEventListener("resize",updateEnvironmentBadge);
@@ -1000,6 +1064,46 @@ function renderTopPanels(){
  $("#nowPlayingStrip").innerHTML=live.length?live.slice(0,12).map(g=>`<div class="live-mini"><b>${gameFav(g)?"💗 ":""}${esc(g.short||g.name)}</b><span>${esc(g.detail||"LIVE")} • ${esc(watchInfo(g.broadcasts).network)}</span></div>`).join(""):`<div class="tiny">Nothing is live right now. We’ll keep checking automatically. 🌸</div>`;
  const soon=all().filter(g=>g.state==="pre"&&g.date>Date.now()&&watchInfo(g.broadcasts).owned).sort((a,b)=>a.date-b.date).slice(0,10);
  $("#comingStrip").innerHTML=soon.length?soon.map(g=>{let w=watchInfo(g.broadcasts);return `<div class="coming-mini"><b>${esc(g.short||g.name)}</b><span>${fmt(g.date)}<br>📺 ${esc(w.service)} • ${esc(w.network)}</span></div>`}).join(""):`<div class="tiny">No upcoming games have a confirmed network on your saved services yet.</div>`;
+}
+
+function usOpenDateKey(g){return mstKey(g.date)}
+function availableUSOpenDates(){
+ const seen=new Set();
+ return data.tennis.slice().sort((a,b)=>a.date-b.date).map(g=>usOpenDateKey(g)).filter(k=>k&&!seen.has(k)&&seen.add(k));
+}
+function humanDateKey(key){
+ const [y,m,d]=key.split("-").map(Number);
+ const dt=new Date(Date.UTC(y,m-1,d,12));
+ return dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"});
+}
+function ensureUSOpenDate(){
+ const keys=availableUSOpenDates();
+ if(!keys.length)return "";
+ const today=mstKey(new Date());
+ if(!selectedUSOpenDate||!keys.includes(selectedUSOpenDate)){
+  selectedUSOpenDate=keys.includes(today)?today:(keys.find(k=>k>today)||keys[keys.length-1]);
+ }
+ return selectedUSOpenDate;
+}
+function renderUSOpenDailyBar(){
+ const active=ensureUSOpenDate(),keys=availableUSOpenDates();
+ const todays=data.tennis.filter(g=>usOpenDateKey(g)===active);
+ const live=todays.filter(g=>g.state==="in").length;
+ const finals=todays.filter(g=>g.state==="post"||g.completed).length;
+ return `<section class="usopen-daily">
+  <div class="panel-head"><div><h2>🌸 Today at the US Open</h2><div class="tiny">Pick a day to see every match and the newest score</div></div><span class="mst-pill">MST</span></div>
+  <div class="date-strip">${keys.map(k=>`<button class="date-pill ${k===active?"active":""}" onclick="GameDay.pickUSOpenDate('${k}')">${k===mstKey(new Date())?"Today":humanDateKey(k).split(",")[0]}<small>${humanDateKey(k).replace(/^[A-Za-z]{3},\s*/,"")}</small></button>`).join("")}</div>
+  <div class="daily-summary">${todays.length} matches • ${live} live • ${finals} finished</div>
+ </section>`;
+}
+function tennisLiveBlock(g){
+ if(!g.league.startsWith("US Open"))return "";
+ if(g.state!=="in"&&g.state!=="post"&&!g.completed)return "";
+ return `<div class="tennis-live-score">
+  <strong>${g.state==="in"?"🔴 LIVE SCORE":"Final score"}</strong>
+  ${g.teams.slice(0,2).map(t=>`<div class="tennis-score-row"><span>${esc(t.name)}</span><b>${esc(t.score||"")}</b></div>${t.linescores?.length?`<div class="sets">${t.linescores.map(s=>`<span class="set-chip">${esc(s)}</span>`).join("")}</div>`:""}`).join("")}
+  ${g.detail?`<div class="tiny" style="margin-top:5px">${esc(g.detail)}</div>`:""}
+ </div>`;
 }
 function renderTVGuide(){
  const groups={};
@@ -1086,6 +1190,13 @@ function render(){
  else if(currentView==="cfb"){base=data.cfb;title="College Football";sub="FBS schedule in the loaded window"}
  else if(currentView==="tennismen"){base=data.tennis.filter(g=>/Men/i.test(g.league));title="US Open • Men";sub="Singles and doubles • favorite players with the heart button";special=renderOnCourt()}
  else if(currentView==="tenniswomen"){base=data.tennis.filter(g=>/Women/i.test(g.league));title="US Open • Women";sub="Singles and doubles • favorite players with the heart button";special=renderOnCourt()}
+ else if(currentView==="usopen"){
+  const active=ensureUSOpenDate();
+  base=data.tennis.filter(g=>usOpenDateKey(g)===active);
+  title=active===mstKey(new Date())?"Today at the US Open":`US Open • ${humanDateKey(active)}`;
+  sub="Every men’s and women’s match for the selected day, with live/current scores";
+  special=renderUSOpenDailyBar()+renderOnCourt();
+ }
  else if(currentView==="tv"){title="TV Guide";sub="Everything organized by the services your family has";special=renderTVGuide()}
  else if(currentView==="draw"){title="US Open Draw";sub="Full tournament window grouped into rounds";special=renderDraw()}
  else if(currentView==="standings"){title="NFL Standings";sub="Division records and playoff-seed data from the live standings feed";special=renderStandings()}
@@ -1119,7 +1230,18 @@ async function fetchAll(){
   setStatus(fail?"error":"ok",fail?"Partially updated":"Live data connected");
   $("#lastUpdated").textContent=`Updated ${mstTime(new Date())}`;
   $("#loadedRange").textContent=`${daysBack}d back • ${daysAhead}d ahead`;window._feedConnected=true;updateEnvironmentBadge();nextRefresh=Date.now()+REFRESH_MS;detectFavoriteWins();render();checkAlerts();
- }catch(e){console.error(e);window._feedConnected=false;updateEnvironmentBadge();setStatus("error","Live feed unavailable");$("#lastUpdated").textContent="Will keep retrying automatically";render()}
+ }catch(e){
+  console.error(e);
+  window._feedConnected=false;
+  updateEnvironmentBadge();
+  const msg=String(e?.message||e||"");
+  const proxyMissing=/proxy is not deployed|404/i.test(msg);
+  setStatus("error",proxyMissing?"Netlify live-data helper missing":"Live feed unavailable");
+  $("#lastUpdated").textContent=proxyMissing
+   ?"Upload the whole Cozy Game Day folder, including netlify/functions"
+   :"Will keep retrying automatically";
+  render();
+}
  finally{$("#refreshBtn").disabled=false}
 }
 function checkAlerts(){
@@ -1140,6 +1262,12 @@ function findGameById(id,league){
 }
 
 window.GameDay={
+ pickUSOpenDate:k=>{
+  const oldY=window.scrollY;
+  selectedUSOpenDate=k;
+  render();
+  requestAnimationFrame(()=>window.scrollTo({top:oldY,left:0,behavior:"auto"}));
+ },
  iosCalendarById:async(id,league)=>{
   const g=findGameById(id,league);
   if(!g){toast("Couldn’t find that game.");return}

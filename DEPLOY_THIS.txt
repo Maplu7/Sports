@@ -1,0 +1,39 @@
+COZY GAME DAY ULTRA V6
+
+NEW:
+- Game Day Pulse dashboard
+- Live & Happening ticker
+- Live Spotlight
+- Data Doctor built into the home page
+- Daily US Open picker with live/current/final scores
+- Men + Women US Open views
+- TV guide, favorites, standings, weather, calendar, notifications
+- Dedicated diagnostics.html page
+- Simpler Netlify /api/sports backend
+- Live API calls are never service-worker cached
+
+UPLOAD ALL CONTENTS OF THIS FOLDER TO THE ROOT OF YOUR GITHUB SPORTS REPO.
+
+Required root files:
+index.html
+diagnostics.html
+manifest.webmanifest
+sw.js
+icon-192.png
+icon-512.png
+netlify.toml
+
+Required nested file:
+netlify/functions/sports.js
+
+After Netlify deploys, test:
+https://beaniesports.netlify.app/api/sports?feed=health
+
+Expected:
+{"ok":true,...}
+
+Then test:
+https://beaniesports.netlify.app/diagnostics.html
+
+If the health endpoint is 404, the tracker UI cannot fix that by itself:
+Netlify has not deployed netlify/functions/sports.js / netlify.toml from the repo root.
