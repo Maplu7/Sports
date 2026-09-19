@@ -1,7 +1,0 @@
-PASS — sports.js
-PASS — index.html JS
-PASS — manifest
-PASS — icons
-PASS — redirect
-
-Network architecture remains Netlify /api/sports -> sports.js. Future schedules use single-date requests, not date ranges.
