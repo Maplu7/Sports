@@ -1,0 +1,15 @@
+const HOSTS=["https://site.web.api.espn.com","https://site.api.espn.com"];
+const H={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*"};
+const res=(statusCode,x)=>({statusCode,headers:H,body:JSON.stringify(x)});
+const cleanDate=x=>/^\d{8}$/.test(String(x||""))?String(x):"";
+function path(f,q={}){
+ const d=cleanDate(q.date),ds=d?`&dates=${d}`:"";
+ if(f==="nfl")return `/apis/site/v2/sports/football/nfl/scoreboard?limit=200${ds}`;
+ if(f==="cfb")return `/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=600${ds}`;
+ if(f==="atp")return `/apis/site/v2/sports/tennis/atp/scoreboard?limit=1200${ds}`;
+ if(f==="wta")return `/apis/site/v2/sports/tennis/wta/scoreboard?limit=1200${ds}`;
+ if(f==="standings")return"/apis/v2/sports/football/nfl/standings";
+ return"";
+}
+async function get(host,p){const c=new AbortController(),t=setTimeout(()=>c.abort(),15000);try{const r=await fetch(host+p,{headers:{Accept:"application/json,text/plain,*/*","User-Agent":"CozyGameDay/14.0"},signal:c.signal});const body=await r.text();let j;try{j=JSON.parse(body)}catch{};return{ok:r.ok&&!!j&&!/access denied|errors\.edgesuite/i.test(body),status:r.status,body}}catch(e){return{ok:false,status:502,body:String(e)}}finally{clearTimeout(t)}}
+exports.handler=async e=>{const q=e.queryStringParameters||{},f=String(q.feed||"").toLowerCase();if(f==="health")return res(200,{ok:true,service:"cozy-game-day-ultimate-v14"});const p=path(f,q);if(!p)return res(400,{error:"Unknown feed"});const attempts=[];for(const host of HOSTS){const x=await get(host,p);attempts.push({host,status:x.status});if(x.ok)return{statusCode:200,headers:H,body:x.body}}return res(502,{error:"Sports provider unavailable",attempts})};
