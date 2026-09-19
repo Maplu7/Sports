@@ -1,8 +1,0 @@
-{
-  "name": "Cozy Game Day",
-  "short_name": "Game Day",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#fff8fb",
-  "theme_color": "#f7d8e5"
-}
