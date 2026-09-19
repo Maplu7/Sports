@@ -1,9 +1,0 @@
-PASS — sports backend
-PASS — service worker
-PASS — frontend JavaScript
-PASS — manifest
-PASS — Netlify redirect
-PASS — API excluded from SW cache
-PASS — predictions explain inputs and uncertainty
-PASS — no fake background-push claim
-PASS — stable sports route retained
