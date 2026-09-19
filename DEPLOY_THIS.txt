@@ -1,20 +1,16 @@
-COZY GAME DAY ULTRA V6
+COZY GAME DAY ULTRA V7 — ESPN ACCESS-DENIED FIX
 
-NEW:
-- Game Day Pulse dashboard
-- Live & Happening ticker
-- Live Spotlight
-- Data Doctor built into the home page
-- Daily US Open picker with live/current/final scores
-- Men + Women US Open views
-- TV guide, favorites, standings, weather, calendar, notifications
-- Dedicated diagnostics.html page
-- Simpler Netlify /api/sports backend
-- Live API calls are never service-worker cached
+WHY THIS VERSION EXISTS:
+The Netlify health endpoint worked, but site.api.espn.com returned Akamai "Access Denied".
+V7 changes the Netlify function to try:
+1. site.web.api.espn.com
+2. site.api.espn.com as fallback
 
-UPLOAD ALL CONTENTS OF THIS FOLDER TO THE ROOT OF YOUR GITHUB SPORTS REPO.
+It also uses a non-browser User-Agent and tests every feed on diagnostics.html.
 
-Required root files:
+UPLOAD/REPLACE ALL FILES IN YOUR GITHUB SPORTS REPO WITH THIS PACKAGE.
+
+Required:
 index.html
 diagnostics.html
 manifest.webmanifest
@@ -22,18 +18,15 @@ sw.js
 icon-192.png
 icon-512.png
 netlify.toml
-
-Required nested file:
 netlify/functions/sports.js
 
-After Netlify deploys, test:
-https://beaniesports.netlify.app/api/sports?feed=health
+AFTER NETLIFY DEPLOYS:
+1. Open /api/sports?feed=health
+   It should say service: cozy-game-day-sports-v7
+2. Open /api/sports?feed=nfl
+   It should return JSON with events, NOT an Access Denied page.
+3. Open /diagnostics.html
+   It checks NFL, college football, ATP, WTA, and standings separately.
+4. Open the main tracker and press Refresh now.
 
-Expected:
-{"ok":true,...}
-
-Then test:
-https://beaniesports.netlify.app/diagnostics.html
-
-If the health endpoint is 404, the tracker UI cannot fix that by itself:
-Netlify has not deployed netlify/functions/sports.js / netlify.toml from the repo root.
+If the Home Screen app is stale, open the website in Safari and refresh once, then reopen the Home Screen app.

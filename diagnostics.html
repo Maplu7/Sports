@@ -1,12 +1,46 @@
 <!doctype html>
 <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cozy Game Day Diagnostics</title>
-<style>body{font-family:system-ui;margin:0;background:#fff7fb;color:#352833}.wrap{max-width:700px;margin:auto;padding:24px}.card{background:white;border:1px solid #efcad7;border-radius:22px;padding:18px;margin:12px 0}button{border:0;border-radius:14px;padding:11px 14px;background:#d8799a;color:white;font-weight:800}pre{white-space:pre-wrap;word-break:break-word;background:#fff4f8;padding:12px;border-radius:14px}</style></head>
-<body><div class="wrap"><h1>💗 Cozy Game Day Diagnostics</h1><p>This page checks the exact Netlify backend used by the mobile app.</p>
-<div class="card"><b>Netlify function</b><pre id="health">Checking…</pre></div>
-<div class="card"><b>NFL feed</b><pre id="nfl">Checking…</pre></div>
-<button onclick="location.href='/'">Back to Cozy Game Day</button></div>
+<style>
+body{font-family:system-ui;margin:0;background:#fff7fb;color:#352833}.wrap{max-width:760px;margin:auto;padding:24px}
+.card{background:white;border:1px solid #efcad7;border-radius:22px;padding:18px;margin:12px 0;box-shadow:0 10px 28px #b75b7b12}
+.good{color:#287444}.bad{color:#a04d32}button{border:0;border-radius:14px;padding:11px 14px;background:#d8799a;color:white;font-weight:800}
+pre{white-space:pre-wrap;word-break:break-word;background:#fff4f8;padding:12px;border-radius:14px;max-height:180px;overflow:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+<h1>💗 Cozy Game Day Diagnostics</h1>
+<p>This checks the exact feeds used by the tracker.</p>
+<div class="grid">
+<div class="card"><b>Backend health</b><div id="healthState">Checking…</div><pre id="health"></pre></div>
+<div class="card"><b>NFL</b><div id="nflState">Checking…</div><pre id="nfl"></pre></div>
+<div class="card"><b>College football</b><div id="cfbState">Checking…</div><pre id="cfb"></pre></div>
+<div class="card"><b>ATP tennis</b><div id="atpState">Checking…</div><pre id="atp"></pre></div>
+<div class="card"><b>WTA tennis</b><div id="wtaState">Checking…</div><pre id="wta"></pre></div>
+<div class="card"><b>NFL standings</b><div id="standingsState">Checking…</div><pre id="standings"></pre></div>
+</div>
+<button onclick="location.href='/'">Back to Cozy Game Day</button>
+</div>
 <script>
-async function check(id,url){try{const r=await fetch(url,{cache:"no-store"});const t=await r.text();document.getElementById(id).textContent=`HTTP ${r.status}\n${t.slice(0,1000)}`}catch(e){document.getElementById(id).textContent=String(e)}}
-check("health","/api/sports?feed=health");check("nfl","/api/sports?feed=nfl");
+async function check(id,feed){
+ const state=document.getElementById(id+"State"),pre=document.getElementById(id);
+ try{
+  const r=await fetch(`/api/sports?feed=${feed}`,{cache:"no-store"});
+  const t=await r.text();
+  let summary=t;
+  try{
+   const j=JSON.parse(t);
+   if(feed==="health")summary=JSON.stringify(j,null,2);
+   else if(j.events)summary=`events: ${j.events.length}\n\n`+JSON.stringify(j.events.slice(0,1),null,2);
+   else if(j.children)summary=`standings groups: ${j.children.length}\n\n`+JSON.stringify(j.children.slice(0,1),null,2);
+   else summary=JSON.stringify(j,null,2);
+  }catch(e){}
+  state.textContent=r.ok?"✓ Working":`✕ HTTP ${r.status}`;
+  state.className=r.ok?"good":"bad";
+  pre.textContent=summary.slice(0,3000);
+ }catch(e){
+  state.textContent="✕ Request failed";state.className="bad";pre.textContent=String(e);
+ }
+}
+check("health","health");check("nfl","nfl");check("cfb","cfb");check("atp","atp");check("wta","wta");check("standings","standings");
 </script></body></html>
