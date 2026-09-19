@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/sports"
+  to = "/.netlify/functions/sports"
+  status = 200
+  force = true
