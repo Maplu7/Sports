@@ -1,0 +1,10 @@
+PASS — sports.js syntax
+PASS — index.html syntax
+PASS — diagnostics.html syntax
+PASS — sports.mjs removed
+PASS — service worker removed
+PASS — 6 SVG icons
+PASS — manifest parses
+PASS — redirect configured
+
+The package and JavaScript are validated. Netlify cloud execution and ESPN's unofficial live endpoint cannot be truthfully guaranteed before deployment.
